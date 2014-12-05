@@ -9,7 +9,7 @@ static void *_realloc(void *ptr, size_t size)
 	return NULL;
 }
 
-void *(*_lws_realloc)(void *ptr, size_t size) = _realloc;
+static void *(*_lws_realloc)(void *ptr, size_t size) = _realloc;
 
 void *lws_realloc(void *ptr, size_t size)
 {
