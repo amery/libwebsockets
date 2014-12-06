@@ -106,6 +106,28 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 		return NULL;
 	}
 
+	switch (info->event) {
+#ifdef LWS_USE_LIBEV
+	case LWS_EVENT_LIBEV:
+		context->event_ops = &lws_libev_event_ops;
+		break;
+#endif
+	case LWS_EVENT_POLL:
+		context->event_ops = &lws_poll_event_ops;
+		break;
+	default:
+		lwsl_err("Events backend %d not supported\n",
+			 info->event);
+		lws_free(context);
+		return NULL;
+	}
+
+	if (context->event_ops->init &&
+	    !context->event_ops->init(info, context)) {
+		lws_free(context);
+		return NULL;
+	}
+
 	if (pid_daemon) {
 		context->started_with_parent = pid_daemon;
 		lwsl_notice(" Started with daemon pid %d\n", pid_daemon);
