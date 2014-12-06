@@ -306,10 +306,12 @@ endif()
 if (WIN32)
 	list(APPEND SOURCES
 		lib/lws-plat-win.c
+		lib/event-poll-win.c
 		)
 else()
 	list(APPEND SOURCES
 		lib/lws-plat-unix.c
+		lib/event-poll-unix.c
 		)
 endif()
 
