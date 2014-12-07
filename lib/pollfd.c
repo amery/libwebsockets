@@ -52,8 +52,9 @@ insert_wsi_socket_into_fds(struct libwebsocket_context *context,
 	wsi->position_in_fds_table = context->fds_count;
 	context->fds[context->fds_count].fd = wsi->sock;
 	context->fds[context->fds_count].events = LWS_POLLIN;
-	
-	lws_plat_insert_socket_into_fds(context, wsi);
+
+	if (context->event_ops->socket_register)
+		context->event_ops->socket_register(context, wsi);
 
 	/* external POLL support via protocol 0 */
 	context->protocols[0].callback(context, wsi,
@@ -99,7 +100,8 @@ remove_wsi_socket_from_fds(struct libwebsocket_context *context,
 	/* have the last guy take up the vacant slot */
 	context->fds[m] = context->fds[context->fds_count];
 
-	lws_plat_delete_socket_from_fds(context, wsi, m);
+	if (context->event_ops->socket_unregister)
+		context->event_ops->socket_unregister(context, wsi, m);
 
 	/*
 	 * end guy's fds_lookup entry remains unchanged
@@ -163,8 +165,8 @@ lws_change_pollfd(struct libwebsocket *wsi, int _and, int _or)
 	 *         then cancel it to force a restart with our changed events
 	 */
 	if (pa.prev_events != pa.events) {
-		
-		if (lws_plat_change_pollfd(context, wsi, pfd)) {
+		if (context->event_ops->socket_change &&
+		    context->event_ops->socket_change(context, wsi, pfd)) {
 			lwsl_info("%s failed\n", __func__);
 			return 1;
 		}

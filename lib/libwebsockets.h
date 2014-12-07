@@ -998,6 +998,15 @@ struct lws_event_ops {
 
 	int (*service)(struct libwebsocket_context *context,
 		       int timeout_ms);
+
+	void (*socket_register)(struct libwebsocket_context *context,
+				struct libwebsocket *wsi);
+	void (*socket_unregister)(struct libwebsocket_context *context,
+				  struct libwebsocket *wsi,
+				  int m);
+	int (*socket_change)(struct libwebsocket_context *context,
+			     struct libwebsocket *wsi,
+			     struct libwebsocket_pollfd *pfd);
 };
 
 LWS_VISIBLE LWS_EXTERN struct lws_event_ops lws_poll_event_ops;

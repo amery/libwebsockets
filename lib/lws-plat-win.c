@@ -199,44 +199,8 @@ interface_to_sa(struct libwebsocket_context *context,
 }
 
 LWS_VISIBLE void
-lws_plat_insert_socket_into_fds(struct libwebsocket_context *context,
-						       struct libwebsocket *wsi)
-{
-	context->fds[context->fds_count++].revents = 0;
-	context->e.poll.events[context->fds_count] = WSACreateEvent();
-	WSAEventSelect(wsi->sock, context->e.poll.events[context->fds_count], LWS_POLLIN);
-}
-
-LWS_VISIBLE void
-lws_plat_delete_socket_from_fds(struct libwebsocket_context *context,
-						struct libwebsocket *wsi, int m)
-{
-	WSACloseEvent(context->e.poll.events[m + 1]);
-	context->e.poll.events[m + 1] = context->e.poll.events[context->fds_count + 1];
-}
-
-LWS_VISIBLE void
 lws_plat_service_periodic(struct libwebsocket_context *context)
 {
-}
-
-LWS_VISIBLE int
-lws_plat_change_pollfd(struct libwebsocket_context *context,
-		      struct libwebsocket *wsi, struct libwebsocket_pollfd *pfd)
-{
-	long networkevents = LWS_POLLOUT | LWS_POLLHUP;
-		
-	if ((pfd->events & LWS_POLLIN))
-		networkevents |= LWS_POLLIN;
-
-	if (WSAEventSelect(wsi->sock,
-			context->e.poll.events[wsi->position_in_fds_table + 1],
-					       networkevents) != SOCKET_ERROR)
-		return 0;
-
-	lwsl_err("WSAEventSelect() failed with error %d\n", LWS_ERRNO);
-
-	return 1;
 }
 
 LWS_VISIBLE HANDLE
