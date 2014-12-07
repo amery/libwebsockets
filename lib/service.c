@@ -628,6 +628,9 @@ handled:
 LWS_VISIBLE int
 libwebsocket_service(struct libwebsocket_context *context, int timeout_ms)
 {
-	return lws_plat_service(context, timeout_ms);
+	assert(context && context->event_ops);
+	assert(context->event_ops->service);
+
+	return context->event_ops->service(context, timeout_ms);
 }
 
