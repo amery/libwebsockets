@@ -403,6 +403,9 @@ struct libwebsocket;
 struct lws_event_ops {
 	int (*init)(struct lws_context_creation_info *info,
 		    struct libwebsocket_context *context);
+
+	int (*service)(struct libwebsocket_context *context,
+		       int timeout_ms);
 };
 
 extern struct lws_event_ops lws_poll_event_ops;
@@ -1196,8 +1199,6 @@ LWS_EXTERN void
 lws_plat_context_late_destroy(struct libwebsocket_context *context);
 LWS_EXTERN int
 lws_poll_listen_fd(struct libwebsocket_pollfd *fd);
-LWS_EXTERN int
-lws_plat_service(struct libwebsocket_context *context, int timeout_ms);
 LWS_EXTERN int
 lws_plat_init_fd_tables(struct libwebsocket_context *context);
 LWS_EXTERN void
