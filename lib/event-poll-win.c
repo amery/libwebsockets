@@ -67,6 +67,47 @@ poll_service(struct libwebsocket_context *context, int timeout_ms)
 	return libwebsocket_service_fd(context, pfd);
 }
 
+static void
+poll_register(struct libwebsocket_context *context,
+	      struct libwebsocket *wsi)
+{
+	context->fds[context->fds_count++].revents = 0;
+	context->e.poll.events[context->fds_count] = WSACreateEvent();
+	WSAEventSelect(wsi->sock, context->e.poll.events[context->fds_count], LWS_POLLIN);
+}
+
+static void
+poll_unregister(struct libwebsocket_context *context,
+		struct libwebsocket *wsi,
+		int m)
+{
+	WSACloseEvent(context->e.poll.events[m + 1]);
+	context->e.poll.events[m + 1] = context->e.poll.events[context->fds_count + 1];
+}
+
+static int
+poll_change(struct libwebsocket_context *context,
+	    struct libwebsocket *wsi,
+	    struct libwebsocket_pollfd *pfd)
+{
+	long networkevents = LWS_POLLOUT | LWS_POLLHUP;
+
+	if ((pfd->events & LWS_POLLIN))
+		networkevents |= LWS_POLLIN;
+
+	if (WSAEventSelect(wsi->sock,
+			   context->e.poll.events[wsi->position_in_fds_table + 1],
+			   networkevents) != SOCKET_ERROR)
+		return 0;
+
+	lwsl_err("WSAEventSelect() failed with error %d\n", LWS_ERRNO);
+
+	return 1;
+}
+
 struct lws_event_ops lws_poll_event_ops = {
 	.service = poll_service,
+	.socket_register = poll_register,
+	.socket_unregister = poll_unregister,
+	.socket_change = poll_change,
 };
