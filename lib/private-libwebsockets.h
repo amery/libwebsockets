@@ -412,10 +412,13 @@ struct lws_signal_watcher {
 };
 #endif /* LWS_USE_LIBEV */
 
-struct libwebsocket_context {
 #ifdef _WIN32
+struct _lws_win_poll_event_context {
 	WSAEVENT *events;
+};
 #endif
+
+struct libwebsocket_context {
 	struct libwebsocket_pollfd *fds;
 	struct libwebsocket **lws_lookup; /* fd to wsi */
 	int fds_count;
@@ -425,6 +428,13 @@ struct libwebsocket_context {
 	struct lws_signal_watcher w_sigint;
 #endif /* LWS_USE_LIBEV */
 	int max_fds;
+
+	union {
+#ifdef _WIN32
+		struct _lws_win_poll_event_context poll;
+#endif
+	} e;
+
 	int listen_port;
 	const char *iface;
 	char http_proxy_address[128];
