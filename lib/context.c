@@ -98,12 +98,12 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 	lwsl_info(" LWS_MAX_ZLIB_CONN_BUFFER: %u\n", LWS_MAX_ZLIB_CONN_BUFFER);
 
 	if (lws_plat_context_early_init())
-		return NULL;
+		goto done;
 
 	context = lws_zalloc(sizeof(struct libwebsocket_context));
 	if (!context) {
 		lwsl_err("No memory for websocket context\n");
-		return NULL;
+		goto done;
 	}
 
 	/* basic LWS_SERVER_OPTION_LIBEV compatibility */
@@ -126,14 +126,12 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 	default:
 		lwsl_err("Events backend %d not supported\n",
 			 info->event);
-		lws_free(context);
-		return NULL;
+		goto bail_free;
 	}
 
 	if (context->event_ops->init &&
 	    !context->event_ops->init(info, context)) {
-		lws_free(context);
-		return NULL;
+		goto bail_free;
 	}
 
 	if (pid_daemon) {
@@ -170,8 +168,7 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 	if (context->fds == NULL) {
 		lwsl_err("Unable to allocate fds array for %d connections\n",
 							      context->max_fds);
-		lws_free(context);
-		return NULL;
+		goto bail_free;
 	}
 
 	context->lws_lookup = lws_zalloc(sizeof(struct libwebsocket *) * context->max_fds);
@@ -179,16 +176,11 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 		lwsl_err(
 		  "Unable to allocate lws_lookup array for %d connections\n",
 							      context->max_fds);
-		lws_free(context->fds);
-		lws_free(context);
-		return NULL;
+		goto bail_free;
 	}
 
 	if (lws_plat_init_fd_tables(context)) {
-		lws_free(context->lws_lookup);
-		lws_free(context->fds);
-		lws_free(context);
-		return NULL;
+		goto bail_free;
 	}
 
 	lws_context_init_extensions(info, context);
@@ -291,11 +283,20 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 								   NULL, 0) < 0)
 			goto bail;
 
-	return context;
+	goto done;
 
 bail:
 	libwebsocket_context_destroy(context);
-	return NULL;
+	context = NULL;
+bail_free:
+	if (context) {
+		lws_free(context->lws_lookup);
+		lws_free(context->fds);
+		lws_free(context);
+		context = NULL;
+	}
+done:
+	return context;
 }
 
 /**
