@@ -47,7 +47,7 @@
 static int close_testing;
 int max_poll_elements;
 
-struct pollfd *pollfds;
+struct libwebsocket_pollfd *pollfds;
 int *fd_lookup;
 int count_pollfds;
 static volatile int force_exit = 0;
@@ -879,7 +879,7 @@ int main(int argc, char **argv)
 	printf("Using resource path \"%s\"\n", resource_path);
 #ifdef EXTERNAL_POLL
 	max_poll_elements = getdtablesize();
-	pollfds = malloc(max_poll_elements * sizeof (struct pollfd));
+	pollfds = malloc(max_poll_elements * sizeof (struct libwebsocket_pollfd));
 	fd_lookup = malloc(max_poll_elements * sizeof (int));
 	if (pollfds == NULL || fd_lookup == NULL) {
 		lwsl_err("Out of memory pollfds=%d\n", max_poll_elements);
