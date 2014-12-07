@@ -403,6 +403,8 @@ struct libwebsocket;
 #ifdef LWS_USE_LIBEV
 struct _lws_libev_event_context {
 	struct ev_loop *loop;
+
+	struct ev_timer w_timeout;
 };
 #endif /* LWS_USE_LIBEV */
 
