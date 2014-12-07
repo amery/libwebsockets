@@ -295,32 +295,12 @@ interface_to_sa(struct libwebsocket_context *context,
 }
 
 LWS_VISIBLE void
-lws_plat_insert_socket_into_fds(struct libwebsocket_context *context,
-						       struct libwebsocket *wsi)
-{
-	context->fds[context->fds_count++].revents = 0;
-}
-
-LWS_VISIBLE void
-lws_plat_delete_socket_from_fds(struct libwebsocket_context *context,
-						struct libwebsocket *wsi, int m)
-{
-}
-
-LWS_VISIBLE void
 lws_plat_service_periodic(struct libwebsocket_context *context)
 {
 	/* if our parent went down, don't linger around */
 	if (context->started_with_parent &&
 			      kill(context->started_with_parent, 0) < 0)
 		kill(getpid(), SIGTERM);
-}
-
-LWS_VISIBLE int
-lws_plat_change_pollfd(struct libwebsocket_context *context,
-		      struct libwebsocket *wsi, struct libwebsocket_pollfd *pfd)
-{
-	return 0;
 }
 
 LWS_VISIBLE int
