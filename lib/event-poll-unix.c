@@ -86,6 +86,15 @@ poll_service(struct libwebsocket_context *context, int timeout_ms)
 	return 0;
 }
 
+
+static void
+poll_register(struct libwebsocket_context *context,
+	      struct libwebsocket *wsi)
+{
+	context->fds[context->fds_count++].revents = 0;
+}
+
 struct lws_event_ops lws_poll_event_ops = {
 	.service = poll_service,
+	.socket_register = poll_register,
 };

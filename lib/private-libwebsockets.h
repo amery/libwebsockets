@@ -1167,17 +1167,8 @@ lws_zalloc(size_t size);
  * lws_plat_
  */
 LWS_EXTERN void
-lws_plat_delete_socket_from_fds(struct libwebsocket_context *context,
-					       struct libwebsocket *wsi, int m);
-LWS_EXTERN void
-lws_plat_insert_socket_into_fds(struct libwebsocket_context *context,
-						      struct libwebsocket *wsi);
-LWS_EXTERN void
 lws_plat_service_periodic(struct libwebsocket_context *context);
 
-LWS_EXTERN int
-lws_plat_change_pollfd(struct libwebsocket_context *context,
-		     struct libwebsocket *wsi, struct libwebsocket_pollfd *pfd);
 LWS_EXTERN int
 lws_plat_context_early_init(void);
 LWS_EXTERN void
