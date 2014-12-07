@@ -995,6 +995,9 @@ struct libwebsocket_extension {
 struct lws_event_ops {
 	int (*init)(struct lws_context_creation_info *info,
 		    struct libwebsocket_context *context);
+
+	int (*service)(struct libwebsocket_context *context,
+		       int timeout_ms);
 };
 
 LWS_EXTERN struct lws_event_ops lws_poll_event_ops;
