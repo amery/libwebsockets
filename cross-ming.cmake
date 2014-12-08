@@ -6,20 +6,20 @@
 #  cmake .. -DCMAKE_TOOLCHAIN_FILE=../cross-ming.cmake
 #
 
-set(CROSS_PATH /usr/bin)
+set(COMPILER_PREFIX "x86_64-w64-mingw32-")
 
 # Target operating system name.
 set(CMAKE_SYSTEM_NAME Windows)
 set(BUILD_SHARED_LIBS OFF)
 
 # Name of C compiler.
-set(CMAKE_C_COMPILER "${CROSS_PATH}/x86_64-w64-mingw32-gcc")
-#set(CMAKE_CXX_COMPILER "${CROSS_PATH}/x86_64-w64-mingw32-g++")
-set(CMAKE_RC_COMPILER "${CROSS_PATH}/x86_64-w64-mingw32-windres")
+set(CMAKE_C_COMPILER "${COMPILER_PREFIX}gcc")
+set(CMAKE_CXX_COMPILER "${COMPILER_PREFIX}g++")
+set(CMAKE_RC_COMPILER "${COMPILER_PREFIX}windres")
 set(CMAKE_C_FLAGS "-Wno-error")
 
 # Where to look for the target environment. (More paths can be added here)
-set(CMAKE_FIND_ROOT_PATH "${CROSS_PATH}")
+#set(CMAKE_FIND_ROOT_PATH "${CROSS_PATH}")
 
 # Adjust the default behavior of the FIND_XXX() commands:
 # search programs in the host environment only.
