@@ -554,6 +554,7 @@ struct libwebsocket;
 struct libwebsocket_context;
 /* needed even with extensions disabled for create context */
 struct libwebsocket_extension;
+struct lws_context_creation_info;
 
 /**
  * callback_function() - User server actions
@@ -992,6 +993,13 @@ struct libwebsocket_extension {
 };
 #endif
 
+struct lws_event_ops {
+	int (*init)(struct lws_context_creation_info *info,
+		    struct libwebsocket_context *context);
+};
+
+LWS_VISIBLE LWS_EXTERN struct lws_event_ops lws_poll_event_ops;
+
 /**
  * struct lws_context_creation_info: parameters to create context with
  *
@@ -1056,6 +1064,7 @@ struct lws_context_creation_info {
 	int uid;
 	unsigned int options;
 	void *user;
+	struct lws_event_ops *event_ops;
 	int ka_time;
 	int ka_probes;
 	int ka_interval;

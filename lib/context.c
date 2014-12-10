@@ -107,6 +107,17 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 		return NULL;
 	}
 
+	if (info->event_ops)
+		context->event_ops = info->event_ops;
+	else
+		context->event_ops = &lws_poll_event_ops;
+
+	if (context->event_ops->init &&
+	    !context->event_ops->init(info, context)) {
+		lws_free(context);
+		return NULL;
+	}
+
 	if (pid_daemon) {
 		context->started_with_parent = pid_daemon;
 		lwsl_notice(" Started with daemon pid %d\n", pid_daemon);
