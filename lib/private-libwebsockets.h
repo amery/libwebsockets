@@ -435,6 +435,8 @@ struct libwebsocket_context {
 #endif
 	} e;
 
+	struct lws_event_ops *event_ops;
+
 	int listen_port;
 	const char *iface;
 	char http_proxy_address[128];
