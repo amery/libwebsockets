@@ -400,6 +400,11 @@ enum {
 struct libwebsocket_protocols;
 struct libwebsocket;
 
+struct lws_event_ops {
+	int (*init)(struct lws_context_creation_info *info,
+		    struct libwebsocket_context *context);
+};
+
 #ifdef LWS_USE_LIBEV
 struct lws_io_watcher {
 	struct ev_io watcher;
@@ -434,6 +439,8 @@ struct libwebsocket_context {
 		struct _lws_win_poll_event_context poll;
 #endif
 	} e;
+
+	struct lws_event_ops *event_ops;
 
 	int listen_port;
 	const char *iface;
