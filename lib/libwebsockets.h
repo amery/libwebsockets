@@ -992,6 +992,13 @@ struct libwebsocket_extension {
 };
 #endif
 
+enum libwebsocket_event_backends {
+	LWS_EVENT_POLL,
+#ifdef LWS_USE_LIBEV
+	LWS_EVENT_LIBEV = 1,
+#endif
+};
+
 /**
  * struct lws_context_creation_info: parameters to create context with
  *
@@ -1056,6 +1063,7 @@ struct lws_context_creation_info {
 	int uid;
 	unsigned int options;
 	void *user;
+	enum libwebsocket_event_backends event;
 	int ka_time;
 	int ka_probes;
 	int ka_interval;
