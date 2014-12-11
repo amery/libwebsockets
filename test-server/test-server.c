@@ -806,6 +806,8 @@ int main(int argc, char **argv)
 		case 'e':
 #ifdef LWS_USE_LIBEV
 			event_ops = &lws_libev_event_ops;
+#else
+			fprintf(stderr, "libev backend not supported, ignoring.\n");
 #endif
 			break;
 #ifndef LWS_NO_DAEMONIZE
