@@ -1218,6 +1218,16 @@ LWS_VISIBLE LWS_EXTERN const struct libwebsocket_protocols *
 libwebsockets_get_protocol(struct libwebsocket *wsi);
 
 LWS_VISIBLE LWS_EXTERN int
+libwebsocket_call_all(struct libwebsocket_context *context,
+		      void (*f) (struct libwebsocket_context *,
+				 struct libwebsocket *));
+
+LWS_VISIBLE LWS_EXTERN int
+libwebsocket_call_all_protocol(const struct libwebsocket_protocols *protocol,
+			       void (*f) (struct libwebsocket_context *,
+					  struct libwebsocket *));
+
+LWS_VISIBLE LWS_EXTERN int
 libwebsocket_callback_on_writable(struct libwebsocket_context *context,
 						      struct libwebsocket *wsi);
 

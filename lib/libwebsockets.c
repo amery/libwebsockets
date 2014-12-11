@@ -426,6 +426,55 @@ libwebsocket_context_user(struct libwebsocket_context *context)
 	return context->user_space;
 }
 
+/**
+ * libwebsocket_call_all() - Calls a function for every connection
+ *
+ */
+LWS_VISIBLE int
+libwebsocket_call_all(struct libwebsocket_context *context,
+		      void (*f) (struct libwebsocket_context *,
+				 struct libwebsocket *))
+{
+	int i;
+	int c = 0;
+	struct libwebsocket *wsi;
+
+	for (i = 0; i < context->fds_count; i++) {
+		wsi = context->lws_lookup[context->fds[i].fd];
+		if (wsi) {
+			c++;
+			f(context, wsi);
+		}
+	}
+
+	return c;
+}
+
+/**
+ * libwebsocket_call_all_protocol() - Calls a function for every
+ * connection using the given protocol
+ *
+ * @protocol:	Protocol whose connections will get callbacks
+ */
+LWS_VISIBLE int
+libwebsocket_call_all_protocol(const struct libwebsocket_protocols *protocol,
+			       void (*f) (struct libwebsocket_context *,
+					  struct libwebsocket *))
+{
+	struct libwebsocket_context *context = protocol->owning_server;
+	int i, c = 0;
+	struct libwebsocket *wsi;
+
+	for (i = 0; i < context->fds_count; i++) {
+		wsi = context->lws_lookup[context->fds[i].fd];
+		if (wsi && wsi->protocol == protocol) {
+			c++;
+			f(context, wsi);
+		}
+	}
+
+	return c;
+}
 
 /**
  * libwebsocket_callback_all_protocol() - Callback all connections using
