@@ -779,6 +779,7 @@ int main(int argc, char **argv)
 	char cert_path[1024];
 	char key_path[1024];
 	int n = 0;
+	int backend = LWS_EVENT_POLL;
 	int use_ssl = 0;
 	int opts = 0;
 	char interface_name[128] = "";
@@ -803,7 +804,11 @@ int main(int argc, char **argv)
 			continue;
 		switch (n) {
 		case 'e':
-			opts |= LWS_SERVER_OPTION_LIBEV;
+#ifdef LWS_USE_LIBEV
+			backend = LWS_EVENT_LIBEV;
+#else
+			fprintf(stderr, "libev backend not supported, ignoring.\n");
+#endif
 			break;
 #ifndef LWS_NO_DAEMONIZE
 		case 'D':
@@ -892,6 +897,7 @@ int main(int argc, char **argv)
 #ifndef LWS_NO_EXTENSIONS
 	info.extensions = libwebsocket_get_internal_extensions();
 #endif
+	info.event = backend;
 	if (!use_ssl) {
 		info.ssl_cert_filepath = NULL;
 		info.ssl_private_key_filepath = NULL;
