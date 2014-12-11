@@ -730,8 +730,6 @@ try_pollout:
 		/* one shot */
 		if (lws_change_pollfd(wsi, LWS_POLLOUT, 0))
 			goto fail;
-		
-		lws_libev_io(context, wsi, LWS_EV_STOP | LWS_EV_WRITE);
 
 		if (wsi->state != WSI_STATE_HTTP_ISSUING_FILE) {
 			n = user_callback_handle_rxflow(
@@ -814,8 +812,6 @@ try_pollout:
 
 		(context->protocols[0].callback)(context, new_wsi,
 			LWS_CALLBACK_SERVER_NEW_CLIENT_INSTANTIATED, NULL, NULL, 0);
-
-		lws_libev_accept(context, new_wsi, accept_fd);
 
 		if (!LWS_SSL_ENABLED(context)) {
 			lwsl_debug("accepted new conn  port %u on fd=%d\n",

@@ -204,8 +204,6 @@ user_service:
 			lwsl_info("failled at set pollfd\n");
 			return 1;
 		}
-
-		lws_libev_io(context, wsi, LWS_EV_STOP | LWS_EV_WRITE);
 	}
 
 #ifdef LWS_USE_HTTP2
@@ -359,7 +357,6 @@ libwebsocket_service_fd(struct libwebsocket_context *context,
 
 	time(&now);
 
-	/* TODO: if using libev, we should probably use timeout watchers... */
 	if (context->last_timeout_check_s != now) {
 		context->last_timeout_check_s = now;
 

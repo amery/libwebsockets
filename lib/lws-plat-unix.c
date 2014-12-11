@@ -103,8 +103,6 @@ lws_plat_service(struct libwebsocket_context *context, int timeout_ms)
 	if (!context)
 		return 1;
 
-	lws_libev_run(context);
-
 	context->service_tid = context->protocols[0].callback(context, NULL,
 				     LWS_CALLBACK_GET_THREAD_ID, NULL, NULL, 0);
 
@@ -256,10 +254,6 @@ lws_plat_drop_app_privileges(struct lws_context_creation_info *info)
 LWS_VISIBLE int
 lws_plat_init_fd_tables(struct libwebsocket_context *context)
 {
-	if (lws_libev_init_fd_table(context))
-		/* libev handled it instead */
-		return 0;
-
 	if (pipe(context->dummy_pipe_fds)) {
 		lwsl_err("Unable to create pipe\n");
 		return 1;
@@ -390,7 +384,6 @@ LWS_VISIBLE void
 lws_plat_insert_socket_into_fds(struct libwebsocket_context *context,
 						       struct libwebsocket *wsi)
 {
-	lws_libev_io(context, wsi, LWS_EV_START | LWS_EV_READ);
 	context->fds[context->fds_count++].revents = 0;
 }
 
