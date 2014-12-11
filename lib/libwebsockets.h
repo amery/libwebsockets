@@ -169,7 +169,6 @@ enum libwebsocket_context_options {
 	LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT = 2,
 	LWS_SERVER_OPTION_SKIP_SERVER_CANONICAL_NAME = 4,
 	LWS_SERVER_OPTION_ALLOW_NON_SSL_ON_SSL_PORT = 8,
-	LWS_SERVER_OPTION_LIBEV = 16,
 	LWS_SERVER_OPTION_DISABLE_IPV6 = 32,
 	LWS_SERVER_OPTION_DISABLE_OS_CA_CERTS = 64,
 };
@@ -1000,6 +999,13 @@ struct lws_event_ops {
 
 LWS_VISIBLE LWS_EXTERN struct lws_event_ops lws_poll_event_ops;
 
+#ifdef LWS_USE_LIBEV
+struct _lws_libev_event_info {
+	struct ev_loop *loop;
+};
+LWS_VISIBLE LWS_EXTERN struct lws_event_ops lws_libev_event_ops;
+#endif
+
 /**
  * struct lws_context_creation_info: parameters to create context with
  *
@@ -1065,6 +1071,11 @@ struct lws_context_creation_info {
 	unsigned int options;
 	void *user;
 	struct lws_event_ops *event_ops;
+	union {
+#ifdef LWS_USE_LIBEV
+		struct _lws_libev_event_info ev;
+#endif
+	} e;
 	int ka_time;
 	int ka_probes;
 	int ka_interval;
@@ -1134,16 +1145,6 @@ lws_add_http_header_status(struct libwebsocket_context *context,
 			    unsigned char *end);
 
 LWS_EXTERN int lws_http_transaction_completed(struct libwebsocket *wsi);
-
-#ifdef LWS_USE_LIBEV
-LWS_VISIBLE LWS_EXTERN int
-libwebsocket_initloop(
-	struct libwebsocket_context *context, struct ev_loop *loop);
-
-LWS_VISIBLE void
-libwebsocket_sigint_cb(
-	struct ev_loop *loop, struct ev_signal *watcher, int revents);
-#endif /* LWS_USE_LIBEV */
 
 LWS_VISIBLE LWS_EXTERN int
 libwebsocket_service_fd(struct libwebsocket_context *context,

@@ -74,8 +74,6 @@ remove_wsi_socket_from_fds(struct libwebsocket_context *context,
 	int m;
 	struct libwebsocket_pollargs pa = { wsi->sock, 0, 0 };
 
-	lws_libev_io(context, wsi, LWS_EV_STOP | LWS_EV_READ | LWS_EV_WRITE);
-
 	if (!--context->fds_count) {
 		context->protocols[0].callback(context, wsi,
 			LWS_CALLBACK_LOCK_POLL,
@@ -258,8 +256,6 @@ network_sock:
 
 	if (lws_change_pollfd(wsi, 0, LWS_POLLOUT))
 		return -1;
-
-	lws_libev_io(context, wsi, LWS_EV_START | LWS_EV_WRITE);
 
 	return 1;
 }

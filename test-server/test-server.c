@@ -788,6 +788,7 @@ int main(int argc, char **argv)
 #endif
 	unsigned int ms, oldms = 0;
 	struct lws_context_creation_info info;
+	struct lws_event_ops *event_ops = NULL;
 
 	int debug_level = 7;
 #ifndef LWS_NO_DAEMONIZE
@@ -803,7 +804,9 @@ int main(int argc, char **argv)
 			continue;
 		switch (n) {
 		case 'e':
-			opts |= LWS_SERVER_OPTION_LIBEV;
+#ifdef LWS_USE_LIBEV
+			event_ops = &lws_libev_event_ops;
+#endif
 			break;
 #ifndef LWS_NO_DAEMONIZE
 		case 'D':
@@ -915,6 +918,7 @@ int main(int argc, char **argv)
 	info.gid = -1;
 	info.uid = -1;
 	info.options = opts;
+	info.event_ops = event_ops;
 
 	context = libwebsocket_create_context(&info);
 	if (context == NULL) {
