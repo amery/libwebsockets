@@ -337,7 +337,7 @@ endif()
 
 if (LWS_WITH_LIBEV)
 	list(APPEND SOURCES
-		lib/libev.c
+		lib/event-libev.c
 		)
 endif(LWS_WITH_LIBEV)
 
