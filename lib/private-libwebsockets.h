@@ -401,14 +401,8 @@ struct libwebsocket_protocols;
 struct libwebsocket;
 
 #ifdef LWS_USE_LIBEV
-struct lws_io_watcher {
-	struct ev_io watcher;
-	struct libwebsocket_context* context;
-};
-
-struct lws_signal_watcher {
-	struct ev_signal watcher;
-	struct libwebsocket_context* context;
+struct _lws_libev_event_context {
+	struct ev_loop *loop;
 };
 #endif /* LWS_USE_LIBEV */
 
@@ -422,14 +416,12 @@ struct libwebsocket_context {
 	struct libwebsocket_pollfd *fds;
 	struct libwebsocket **lws_lookup; /* fd to wsi */
 	int fds_count;
-#ifdef LWS_USE_LIBEV
-	struct ev_loop* io_loop;
-	struct lws_io_watcher w_accept;
-	struct lws_signal_watcher w_sigint;
-#endif /* LWS_USE_LIBEV */
 	int max_fds;
 
 	union {
+#ifdef LWS_USE_LIBEV
+		struct _lws_libev_event_context ev;
+#endif /* LWS_USE_LIBEV */
 #ifdef _WIN32
 		struct _lws_win_poll_event_context poll;
 #endif
@@ -496,36 +488,6 @@ struct libwebsocket_context {
     struct lws_token_limits *token_limits;
 	void *user_space;
 };
-
-enum {
-	LWS_EV_READ = (1 << 0),
-	LWS_EV_WRITE = (1 << 1),
-	LWS_EV_START = (1 << 2),
-	LWS_EV_STOP = (1 << 3),
-};
-
-#ifdef LWS_USE_LIBEV
-#define LWS_LIBEV_ENABLED(context) (context->options & LWS_SERVER_OPTION_LIBEV)
-LWS_EXTERN void lws_feature_status_libev(struct lws_context_creation_info *info);
-LWS_EXTERN void
-lws_libev_accept(struct libwebsocket_context *context,
-		 struct libwebsocket *new_wsi, int accept_fd);
-LWS_EXTERN void
-lws_libev_io(struct libwebsocket_context *context,
-				struct libwebsocket *wsi, int flags);
-LWS_EXTERN int
-lws_libev_init_fd_table(struct libwebsocket_context *context);
-LWS_EXTERN void
-lws_libev_run(struct libwebsocket_context *context);
-#else
-#define LWS_LIBEV_ENABLED(context) (0)
-#define lws_feature_status_libev(_a) \
-			lwsl_notice("libev support not compiled in\n")
-#define lws_libev_accept(_a, _b, _c) ((void) 0)
-#define lws_libev_io(_a, _b, _c) ((void) 0)
-#define lws_libev_init_fd_table(_a) (0)
-#define lws_libev_run(_a) ((void) 0)
-#endif
 
 #ifdef LWS_USE_IPV6
 #define LWS_IPV6_ENABLED(context) (!(context->options & LWS_SERVER_OPTION_DISABLE_IPV6))
@@ -787,14 +749,19 @@ struct _lws_websocket_related {
 	unsigned int ping_payload_len; /* nonzero if PONG pending */
 };
 
+#ifdef LWS_USE_LIBEV
+struct _lws_libev_event_related {
+	struct libwebsocket_context *context;
+
+	struct ev_io w_read;
+	struct ev_io w_write;
+};
+#endif /* LWS_USE_LIBEV */
+
 struct libwebsocket {
 
 	/* lifetime members */
 
-#ifdef LWS_USE_LIBEV
-    struct lws_io_watcher w_read;
-    struct lws_io_watcher w_write;
-#endif /* LWS_USE_LIBEV */
 	const struct libwebsocket_protocols *protocol;
 #ifndef LWS_NO_EXTENSIONS
 	struct libwebsocket_extension *
@@ -848,6 +815,12 @@ struct libwebsocket {
 		struct _lws_header_related hdr;
 		struct _lws_websocket_related ws;
 	} u;
+
+	union e {
+#ifdef LWS_USE_LIBEV
+		struct _lws_libev_event_related ev;
+#endif /* LWS_USE_LIBEV */
+	} e;
 
 #ifdef LWS_OPENSSL_SUPPORT
 	SSL *ssl;
