@@ -21,7 +21,31 @@
 
 #include "private-libwebsockets.h"
 
-/* error: dereferencing type-punned pointer will break strict-aliasing rules */
+/*
+ * error: dereferencing type-punned pointer will break strict-aliasing rules
+ */
+#ifdef ev_io_init
+#undef ev_io_init
+static inline void ev_io_init(struct ev_io *w,
+			      void (*cb)(struct ev_loop *, struct ev_io *, int),
+			      int fd, int events)
+{
+	ev_init(w, cb);
+	ev_io_set(w, fd, events);
+}
+#endif
+
+#ifdef ev_signal_init
+#undef ev_signal_init
+static inline void ev_signal_init(struct ev_signal *w,
+			      void (*cb)(struct ev_loop *, struct ev_signal *, int),
+			      int signum)
+{
+	ev_init(w, cb);
+	ev_signal_set(w, signum);
+}
+#endif
+
 #ifdef ev_timer_init
 #undef ev_timer_init
 static inline void ev_timer_init(struct ev_timer *w,
@@ -42,6 +66,46 @@ static inline void ev_timer_reset(struct ev_loop *loop,
 	w->at = after;
 	w->repeat = repeat;
 	ev_timer_start(loop, w);
+}
+
+/*
+ * libev callbacks
+ */
+static inline void
+libev_wsi_cb(struct ev_loop *loop, struct libwebsocket *wsi, int fd, int revents)
+{
+	struct libwebsocket_pollfd eventfd;
+	struct libwebsocket_context *context = wsi->e.ev.context;
+
+	if (revents & EV_ERROR)
+		return;
+
+	eventfd.fd = fd;
+	eventfd.revents = EV_NONE;
+	if (revents & EV_READ)
+		eventfd.revents |= LWS_POLLIN;
+	if (revents & EV_WRITE)
+		eventfd.revents |= LWS_POLLOUT;
+
+	libwebsocket_service_fd(context, &eventfd);
+}
+
+static void
+libev_read_cb(struct ev_loop *loop, struct ev_io *watcher, int revents)
+{
+	struct _lws_libev_event_related *evi = container_of(watcher, struct _lws_libev_event_related, w_read);
+	struct libwebsocket *wsi = container_of(evi, struct libwebsocket, e.ev);
+
+	libev_wsi_cb(loop, wsi, watcher->fd, revents);
+}
+
+static void
+libev_write_cb(struct ev_loop *loop, struct ev_io *watcher, int revents)
+{
+	struct _lws_libev_event_related *evi = container_of(watcher, struct _lws_libev_event_related, w_write);
+	struct libwebsocket *wsi = container_of(evi, struct libwebsocket, e.ev);
+
+	libev_wsi_cb(loop, wsi, watcher->fd, revents);
 }
 
 /* just a dummy placeholder to "break" ev_run(..., EVRUN_ONCE) */
@@ -123,7 +187,66 @@ libev_service(struct libwebsocket_context *context, int timeout_ms)
 	return 0;
 }
 
+static void
+libev_register(struct libwebsocket_context *context,
+	       struct libwebsocket *wsi)
+{
+	struct _lws_libev_event_context *evc = &context->e.ev;
+	struct _lws_libev_event_related *evs = &wsi->e.ev;
+	int fd = wsi->sock;
+
+	evs->context = context;
+	ev_io_init(&evs->w_read, libev_read_cb, fd, EV_READ);
+	ev_io_init(&evs->w_write, libev_write_cb, fd, EV_WRITE);
+
+	ev_io_start(evc->loop, &evs->w_read);
+
+	context->fds[context->fds_count++].revents = 0;
+}
+
+static void
+libev_unregister(struct libwebsocket_context *context,
+		 struct libwebsocket *wsi,
+		 int m)
+{
+	struct _lws_libev_event_context *evc = &context->e.ev;
+	struct _lws_libev_event_related *evs = &wsi->e.ev;
+
+	ev_io_stop(evc->loop, &evs->w_read);
+	ev_io_stop(evc->loop, &evs->w_write);
+}
+
+static int
+libev_change(struct libwebsocket_context *context,
+	     struct libwebsocket *wsi,
+	     struct libwebsocket_pollfd *pfd)
+{
+	struct _lws_libev_event_context *evc = &context->e.ev;
+	struct _lws_libev_event_related *evs = &wsi->e.ev;
+	/* read */
+	if (pfd->events & LWS_POLLIN) {
+		if (!evs->w_read.active)
+			ev_io_start(evc->loop, &evs->w_read);
+	} else if (evs->w_read.active) {
+		ev_io_stop(evc->loop, &evs->w_read);
+	}
+
+	/* write */
+	if (pfd->events & LWS_POLLOUT) {
+		if (!evs->w_write.active)
+			ev_io_start(evc->loop, &evs->w_write);
+	} else if (evs->w_write.active) {
+		ev_io_stop(evc->loop, &evs->w_write);
+	}
+
+	return 0;
+}
+
 struct lws_event_ops lws_libev_event_ops = {
 	.init = libev_init,
+
 	.service = libev_service,
+	.socket_register = libev_register,
+	.socket_unregister = libev_unregister,
+	.socket_change = libev_change,
 };
