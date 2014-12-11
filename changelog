@@ -204,8 +204,7 @@ your list of live wsi by doing it from ESTABLISHED and CLOSED callbacks
 
 If you configure cmake with -DLWS_WITH_LIBEV=1 then the code allowing the libev
 eventloop instead of the default poll() one will also be compiled in.  But to
-use it, you must also set the LWS_SERVER_OPTION_LIBEV flag on the context
-creation info struct options member.
+use it, you must also info.event = LWS_EVENT_LIBEV when creating the context.
 
 IPV6 is supported and enabled by default except for Windows, you can disable
 the support at build-time by giving -DLWS_IPV6=, and disable use of it even if

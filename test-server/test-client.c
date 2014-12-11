@@ -249,6 +249,7 @@ static struct option options[] = {
 	{ "undeflated",	no_argument,		NULL, 'u' },
 	{ "nomux",	no_argument,		NULL, 'n' },
 	{ "longlived",	no_argument,		NULL, 'l' },
+	{ "libev",	no_argument,		NULL, 'e' },
 	{ NULL, 0, 0, 0 }
 };
 
@@ -258,6 +259,7 @@ int main(int argc, char **argv)
 	int n = 0;
 	int ret = 0;
 	int port = 7681;
+	int backend = LWS_EVENT_POLL;
 	int use_ssl = 0;
 	struct libwebsocket_context *context;
 	const char *address;
@@ -275,10 +277,17 @@ int main(int argc, char **argv)
 		goto usage;
 
 	while (n >= 0) {
-		n = getopt_long(argc, argv, "nuv:hsp:d:l", options, NULL);
+		n = getopt_long(argc, argv, "enuv:hsp:d:l", options, NULL);
 		if (n < 0)
 			continue;
 		switch (n) {
+		case 'e':
+#ifdef LWS_USE_LIBEV
+			backend = LWS_EVENT_LIBEV;
+#else
+			fprintf(stderr, "libev backend not supported, ignoring.\n");
+#endif
+			break;
 		case 'd':
 			lws_set_log_level(atoi(optarg), NULL);
 			break;
@@ -325,6 +334,7 @@ int main(int argc, char **argv)
 #ifndef LWS_NO_EXTENSIONS
 	info.extensions = libwebsocket_get_internal_extensions();
 #endif
+	info.event = backend;
 	info.gid = -1;
 	info.uid = -1;
 
