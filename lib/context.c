@@ -106,6 +106,14 @@ libwebsocket_create_context(struct lws_context_creation_info *info)
 		return NULL;
 	}
 
+	/* basic LWS_SERVER_OPTION_LIBEV compatibility */
+	if (info->options & LWS_SERVER_OPTION_LIBEV) {
+#ifdef LWS_USE_LIBEV
+		info->event = LWS_EVENT_LIBEV;
+#endif
+		info->options &= ~LWS_SERVER_OPTION_LIBEV;
+	}
+
 	switch (info->event) {
 #ifdef LWS_USE_LIBEV
 	case LWS_EVENT_LIBEV:
