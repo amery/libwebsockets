@@ -24,13 +24,14 @@
 
 #ifdef __cplusplus
 #include <cstddef>
-#include <cstdarg>
 extern "C" {
 #endif
 	
 #ifdef CMAKE_BUILD
 #include "lws_config.h"
 #endif
+
+#include <stdarg.h>
 
 #if defined(WIN32) || defined(_WIN32)
 
