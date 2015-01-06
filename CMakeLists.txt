@@ -278,6 +278,7 @@ set(SOURCES
 	lib/context.c
 	lib/sha-1.c
 	lib/alloc.c
+	lib/event-extpoll.c
 	)
 
 if (NOT LWS_WITHOUT_CLIENT)

@@ -1008,9 +1008,15 @@ struct lws_event_ops {
 	int (*socket_change)(struct libwebsocket_context *context,
 			     struct libwebsocket *wsi,
 			     struct libwebsocket_pollfd *pfd);
+
+	void (*lock)(struct libwebsocket_context *context,
+		     struct libwebsocket *wsi);
+	void (*unlock)(struct libwebsocket_context *context,
+		       struct libwebsocket *wsi);
 };
 
 LWS_VISIBLE LWS_EXTERN struct lws_event_ops lws_poll_event_ops;
+LWS_VISIBLE LWS_EXTERN struct lws_event_ops lws_extpoll_event_ops;
 
 #ifdef LWS_USE_LIBEV
 struct _lws_libev_event_info {

@@ -21,12 +21,14 @@
 
 #include "private-libwebsockets.h"
 
+#define CALL_IF_DEFINED(F, ...)	do { \
+	if ((F)) (F)(__VA_ARGS__); \
+	} while(0)
+
 int
 insert_wsi_socket_into_fds(struct libwebsocket_context *context,
 						       struct libwebsocket *wsi)
 {
-	struct libwebsocket_pollargs pa = { wsi->sock, LWS_POLLIN, 0 };
-
 	if (context->fds_count >= context->max_fds) {
 		lwsl_err("Too many fds (%d)\n", context->max_fds);
 		return 1;
@@ -44,27 +46,15 @@ insert_wsi_socket_into_fds(struct libwebsocket_context *context,
 	lwsl_info("insert_wsi_socket_into_fds: wsi=%p, sock=%d, fds pos=%d\n",
 					    wsi, wsi->sock, context->fds_count);
 
-	context->protocols[0].callback(context, wsi,
-		LWS_CALLBACK_LOCK_POLL,
-		wsi->user_space, (void *) &pa, 0);
+	CALL_IF_DEFINED(context->event_ops->lock, context, wsi);
 
 	context->lws_lookup[wsi->sock] = wsi;
 	wsi->position_in_fds_table = context->fds_count;
 	context->fds[context->fds_count].fd = wsi->sock;
 	context->fds[context->fds_count].events = LWS_POLLIN;
 
-	if (context->event_ops->socket_register)
-		context->event_ops->socket_register(context, wsi);
-
-	/* external POLL support via protocol 0 */
-	context->protocols[0].callback(context, wsi,
-		LWS_CALLBACK_ADD_POLL_FD,
-		wsi->user_space, (void *) &pa, 0);
-
-	context->protocols[0].callback(context, wsi,
-		LWS_CALLBACK_UNLOCK_POLL,
-		wsi->user_space, (void *)&pa, 0);
-
+	CALL_IF_DEFINED(context->event_ops->socket_register, context, wsi);
+	CALL_IF_DEFINED(context->event_ops->unlock, context, wsi);
 	return 0;
 }
 
@@ -73,13 +63,9 @@ remove_wsi_socket_from_fds(struct libwebsocket_context *context,
 						      struct libwebsocket *wsi)
 {
 	int m;
-	struct libwebsocket_pollargs pa = { wsi->sock, 0, 0 };
 
 	if (!--context->fds_count) {
-		context->protocols[0].callback(context, wsi,
-			LWS_CALLBACK_LOCK_POLL,
-			wsi->user_space, (void *) &pa, 0);
-		goto do_ext;
+		return 0;
 	}
 
 	if (wsi->sock > context->max_fds) {
@@ -91,17 +77,14 @@ remove_wsi_socket_from_fds(struct libwebsocket_context *context,
 	lwsl_info("%s: wsi=%p, sock=%d, fds pos=%d\n", __func__,
 				    wsi, wsi->sock, wsi->position_in_fds_table);
 
-	context->protocols[0].callback(context, wsi,
-		LWS_CALLBACK_LOCK_POLL,
-		wsi->user_space, (void *)&pa, 0);
+	CALL_IF_DEFINED(context->event_ops->lock, context, wsi);
 
 	m = wsi->position_in_fds_table; /* replace the contents for this */
 
 	/* have the last guy take up the vacant slot */
 	context->fds[m] = context->fds[context->fds_count];
 
-	if (context->event_ops->socket_unregister)
-		context->event_ops->socket_unregister(context, wsi, m);
+	CALL_IF_DEFINED(context->event_ops->socket_unregister, context, wsi, m);
 
 	/*
 	 * end guy's fds_lookup entry remains unchanged
@@ -115,16 +98,7 @@ remove_wsi_socket_from_fds(struct libwebsocket_context *context,
 	/* removed wsi has no position any more */
 	wsi->position_in_fds_table = -1;
 
-do_ext:
-	/* remove also from external POLL support via protocol 0 */
-	if (wsi->sock) {
-		context->protocols[0].callback(context, wsi,
-		    LWS_CALLBACK_DEL_POLL_FD, wsi->user_space,
-		    (void *) &pa, 0);
-	}
-	context->protocols[0].callback(context, wsi,
-				       LWS_CALLBACK_UNLOCK_POLL,
-				       wsi->user_space, (void *) &pa, 0);
+	CALL_IF_DEFINED(context->event_ops->unlock, context, wsi);
 	return 0;
 }
 
@@ -147,15 +121,10 @@ lws_change_pollfd(struct libwebsocket *wsi, int _and, int _or)
 	pfd = &context->fds[wsi->position_in_fds_table];
 	pa.fd = wsi->sock;
 
-	context->protocols[0].callback(context, wsi,
-		LWS_CALLBACK_LOCK_POLL, wsi->user_space,  (void *) &pa, 0);
+	CALL_IF_DEFINED(context->event_ops->lock, context, wsi);
 
 	pa.prev_events = pfd->events;
 	pa.events = pfd->events = (pfd->events & ~_and) | _or;
-
-	context->protocols[0].callback(context, wsi,
-			LWS_CALLBACK_CHANGE_MODE_POLL_FD,
-				wsi->user_space, (void *) &pa, 0);
 
 	/*
 	 * if we changed something in this pollfd...
@@ -180,9 +149,7 @@ lws_change_pollfd(struct libwebsocket *wsi, int _and, int _or)
 		}
 	}
 
-	context->protocols[0].callback(context, wsi,
-		LWS_CALLBACK_UNLOCK_POLL, wsi->user_space, (void *) &pa, 0);
-	
+	CALL_IF_DEFINED(context->event_ops->unlock, context, wsi);
 	return 0;
 }
 

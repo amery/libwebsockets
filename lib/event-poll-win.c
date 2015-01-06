@@ -1,6 +1,6 @@
 #include "private-libwebsockets.h"
 
-static int
+int
 poll_service(struct libwebsocket_context *context, int timeout_ms)
 {
 	int n;
